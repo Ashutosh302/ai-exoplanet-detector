@@ -4,33 +4,33 @@ Detrending, outlier removal, BLS period searching, phase folding, and array binn
 """
 
 import numpy as np
+import astropy.units as u
 from astropy.timeseries import BoxLeastSquares
 
 
 def clean_and_detrend(lc, window_length: int = 1001, sigma: float = 3.0):
     """
-    Removes NaN values, clips positive outliers, and manually normalizes 
-    flux values to avoid Astropy unit-checking bugs in Python 3.14.
+    Removes NaN values, clips positive outliers, and manually normalizes
+    flux values to avoid Astropy unit-checking bugs.
     """
     # 1. Drop NaNs
     lc = lc.remove_nans()
-    
+
     # 2. Sigma clipping: Remove upward spikes only (preserve downward transits)
     lc_clean = lc.remove_outliers(sigma_upper=sigma, sigma_lower=float("inf"))
-    
-    # 3. MANUAL NORMALIZATION (Bypasses lightkurve's broken .normalize() method)
-    # Extract raw values to strip out conflicting Astropy units
+
+    # 3. MANUAL NORMALIZATION — keep it as a dimensionless Quantity,
+    #    NOT a bare ndarray, or lightkurve's flatten() breaks (it reads flux.unit).
     median_flux = np.median(lc_clean.flux.value)
     if median_flux > 0:
-        lc_clean.flux = lc_clean.flux.value / median_flux
+        lc_clean.flux = u.Quantity(lc_clean.flux.value / median_flux, unit=u.dimensionless_unscaled)
         if hasattr(lc_clean, 'flux_err') and lc_clean.flux_err is not None:
-            lc_clean.flux_err = lc_clean.flux_err.value / median_flux
+            lc_clean.flux_err = u.Quantity(lc_clean.flux_err.value / median_flux, unit=u.dimensionless_unscaled)
 
     # 4. Flatten long-term trends safely
     flat_lc = lc_clean.flatten(window_length=window_length)
-    
-    return flat_lc
 
+    return flat_lc
 
 def run_bls(flat_lc, min_period: float = 0.5, max_period: float = 15.0, duration_hours: float = 2.0):
     """
