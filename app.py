@@ -130,7 +130,7 @@ if run_button or target_id:
         bls_power = bls_stats.get('power', 0.0)
         
         # 1. Catch Eclipsing Binaries (Depth > 5%)
-        if transit_depth > 0.05:
+        if transit_depth > 0.015:
             if label != "Eclipsing Binary":
                 st.warning("⚠️ **Physics Override:** A transit depth over 5% is physically too large for a planet. Reclassified as an Eclipsing Binary.")
             label = "Eclipsing Binary"
