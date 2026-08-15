@@ -58,7 +58,7 @@ def fetch_and_process(target_name):
     if raw_lc is None:
         return None, None, None
     clean_lc = clean_and_detrend(raw_lc)
-    bls_stats = run_bls(clean_lc, min_period=0.8, max_period=15.0)
+    bls_stats = run_bls(clean_lc, min_period=0.8, max_period=15.0,duration_hours=6.0)
     return raw_lc, clean_lc, bls_stats
 
 # --- Header ---
