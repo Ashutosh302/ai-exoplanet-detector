@@ -9,8 +9,8 @@ from astropy.timeseries import BoxLeastSquares
 
 def clean_and_detrend(lc, window_length: int = 1001, sigma: float = 3.0):
     """
-    Removes NaN values, clips positive outliers (flares/cosmic rays), 
-    and flattens stellar variability using a Savitzky-Golay filter.
+    Removes NaN values, clips positive outliers, and manually normalizes 
+    flux values to avoid Astropy unit-checking bugs in Python 3.14.
     """
     # 1. Drop NaNs
     lc = lc.remove_nans()
@@ -18,10 +18,15 @@ def clean_and_detrend(lc, window_length: int = 1001, sigma: float = 3.0):
     # 2. Sigma clipping: Remove upward spikes only (preserve downward transits)
     lc_clean = lc.remove_outliers(sigma_upper=sigma, sigma_lower=float("inf"))
     
-    # 3. FIX: Normalize flux units to prevent Astropy unit division crashes in .flatten()
-    lc_clean = lc_clean.normalize()
-    
-    # 4. Flatten long-term trends
+    # 3. MANUAL NORMALIZATION (Bypasses lightkurve's broken .normalize() method)
+    # Extract raw values to strip out conflicting Astropy units
+    median_flux = np.median(lc_clean.flux.value)
+    if median_flux > 0:
+        lc_clean.flux = lc_clean.flux.value / median_flux
+        if hasattr(lc_clean, 'flux_err') and lc_clean.flux_err is not None:
+            lc_clean.flux_err = lc_clean.flux_err.value / median_flux
+
+    # 4. Flatten long-term trends safely
     flat_lc = lc_clean.flatten(window_length=window_length)
     
     return flat_lc
