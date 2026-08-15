@@ -79,11 +79,9 @@ with st.sidebar.expander("ℹ️ Guide for Custom TIC IDs"):
     )
 
 preset_options = {
-    "WASP-126 b (Confirmed Hot Jupiter)": "TIC 25155310",
-    "TOI-175 / L 98-59 (Multi-planet System)": "TIC 149603524",
-    "HD 21749 b (Sub-Neptune Exoplanet)": "TIC 307210830",
-    "Known Eclipsing Binary System": "TIC 32090583",
-    "Stellar Flare / Noise Artifact": "TIC 388857263",
+    "HD 202772 A b (Exoplanet Candidate)": "TIC 286923464",
+    "YY CrB (Eclipsing Binary)": "TIC 29287800",
+    "Proxima Centauri (Noise / False Positive)": "TIC 388857263",
     "Custom TIC ID": "custom"
 }
 
