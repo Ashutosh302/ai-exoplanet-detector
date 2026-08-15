@@ -125,26 +125,22 @@ if run_button or target_id:
             duration_days=fit_res["duration_hours"] / 24.0,
             depth=fit_res["transit_depth"]
         )
-        
-       # --- ASTROPHYSICAL SANITY CHECK (TWO-WAY OVERRIDE) ---
-        
-        # Use absolute value to prevent negative depth calculations from breaking the logic
+        # --- ASTROPHYSICAL SANITY CHECK ---
         transit_depth = abs(fit_res.get("transit_depth", 0.0))
         bls_power = bls_stats.get('power', 0.0)
         
-        # 1. Catch Eclipsing Binaries (Dips > 5% are physically too deep to be planets)
-        # Note: Bumped to 5% because Hot Jupiters around M-dwarfs can reach ~3-4% depth.
+        # 1. Catch Eclipsing Binaries (Depth > 5%)
         if transit_depth > 0.05:
             if label != "Eclipsing Binary":
-                st.warning("⚠️ **Physics Override:** The AI missed it. A transit depth over 5% is physically too large for a planet. Reclassified as an Eclipsing Binary.")
+                st.warning("⚠️ **Physics Override:** A transit depth over 5% is physically too large for a planet. Reclassified as an Eclipsing Binary.")
             label = "Eclipsing Binary"
             
-        # 2. Catch undeniable Exoplanets the AI missed 
-        # Only override if the AI thought it was noise, but we have strong BLS power and a valid planetary depth.
-        elif bls_power > 10.0 and 0.00005 < transit_depth <= 0.05:
-            if label == "Noise / False Positive":
-                st.success("✨ **Physics Override:** The AI guessed Noise, but the mathematical Box Least Squares power is undeniably strong. Upgraded to Exoplanet Candidate!")
-                label = "Exoplanet Candidate"
+        # 2. Catch true Noise (No Depth AND No Periodicity)
+        elif bls_power < 3.0 and transit_depth < 0.00005:
+            if label != "Noise / False Positive":
+                st.warning("⚠️ **Physics Override:** Reclassified as Noise. The signal lacks a consistent, deep enough planetary transit profile.")
+            label = "Noise / False Positive"
+      
 
         # 3. Catch true Noise, flares, and flatlines
         # Changed 'or' to 'and'. ONLY override to noise if both the power is weak AND the depth is basically non-existent.
