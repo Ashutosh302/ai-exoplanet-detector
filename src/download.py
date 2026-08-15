@@ -36,18 +36,22 @@ def download_target_lightcurve(target_name: str, save_dir: str = "./data/raw", s
     
     try:
        # 1. Try for the gold-standard 2-minute SPOC data first
-        search = lk.search_lightcurve(target_name, author="SPOC", exptime=120)
+       # 1. Try 2-minute SPOC data first
+    search = lk.search_lightcurve(target_name, author="SPOC", exptime=120)
+    
+    if sector is not None and len(search) > 0:
+        search = search[search.table['sequence_number'] == sector]
         
-        if sector is not None:
+    # 2. FALLBACK to broader search if empty or sector not found in SPOC
+    if len(search) == 0:
+        # Search without strict exptime/author restrictions to catch QLP or TESS-SPOC
+        search = lk.search_lightcurve(target_name)
+        
+        if sector is not None and len(search) > 0:
             search = search[search.table['sequence_number'] == sector]
             
-        # 2. FALLBACK: If no 2-minute data exists, grab whatever the QLP or TESS-SPOC pipeline has
-        if len(search) == 0:
-            search = lk.search_lightcurve(target_name, author=["QLP", "TESS-SPOC", "SPOC"])
-            
-        # 3. If STILL nothing is found, then the star just wasn't observed
-        if len(search) == 0:
-            return None
+    if len(search) == 0:
+        return None
             
         # Download the first available sector for this star
         lc = search[0].download(quality_bitmask="hard")
