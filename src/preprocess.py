@@ -18,7 +18,10 @@ def clean_and_detrend(lc, window_length: int = 1001, sigma: float = 3.0):
     # 2. Sigma clipping: Remove upward spikes only (preserve downward transits)
     lc_clean = lc.remove_outliers(sigma_upper=sigma, sigma_lower=float("inf"))
     
-    # 3. Flatten long-term trends
+    # 3. FIX: Normalize flux units to prevent Astropy unit division crashes in .flatten()
+    lc_clean = lc_clean.normalize()
+    
+    # 4. Flatten long-term trends
     flat_lc = lc_clean.flatten(window_length=window_length)
     
     return flat_lc
