@@ -386,7 +386,16 @@ if run_button or target_id:
         if fit_res["transit_depth"] > 0.03 and label == "Exoplanet Candidate":
             label = "Eclipsing Binary"
             st.warning("⚠️ **Physics Override:** The AI initially guessed 'Exoplanet', but a transit depth of over 3% is physically impossible for a planet. The pipeline has automatically reclassified this as an Eclipsing Binary.")
+        # --- ASTROPHYSICAL SANITY CHECK ---
+        # 1. If the transit depth is > 3%, it's physically too large to be a planet.
+        if fit_res["transit_depth"] > 0.03 and label == "Exoplanet Candidate":
+            label = "Eclipsing Binary"
+            st.warning("⚠️ **Physics Override:** The AI initially guessed 'Exoplanet', but a transit depth of over 3% is physically impossible for a planet. Reclassified as an Eclipsing Binary.")
 
+        # 2. Catch erratic noise, flares, or flatlines that lack a true transit profile
+        elif label == "Exoplanet Candidate" and (bls_stats['power'] < 5.0 or fit_res['transit_depth'] < 0.0005):
+            label = "Noise / False Positive"
+            st.warning("⚠️ **Physics Override:** Reclassified as Noise / False Positive because the signal lacks a consistent planetary transit profile.")
         # 3. Top Metrics Banner
         st.subheader("🔍 Analysis Verdict")
         col1, col2, col3, col4 = st.columns(4)
