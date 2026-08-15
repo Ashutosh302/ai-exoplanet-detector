@@ -128,22 +128,29 @@ if run_button or target_id:
             depth=fit_res["transit_depth"]
         )
         
-        # --- ASTROPHYSICAL SANITY CHECK (TWO-WAY OVERRIDE) ---
+       # --- ASTROPHYSICAL SANITY CHECK (TWO-WAY OVERRIDE) ---
         
-        # 1. Catch Eclipsing Binaries (Dips > 3% are physically too deep to be planets)
-        if fit_res["transit_depth"] > 0.03:
+        # Use absolute value to prevent negative depth calculations from breaking the logic
+        transit_depth = abs(fit_res.get("transit_depth", 0.0))
+        bls_power = bls_stats.get('power', 0.0)
+        
+        # 1. Catch Eclipsing Binaries (Dips > 5% are physically too deep to be planets)
+        # Note: Bumped to 5% because Hot Jupiters around M-dwarfs can reach ~3-4% depth.
+        if transit_depth > 0.05:
             if label != "Eclipsing Binary":
-                st.warning("⚠️ **Physics Override:** The AI missed it. A transit depth over 3% is physically too large for a planet. Reclassified as an Eclipsing Binary.")
+                st.warning("⚠️ **Physics Override:** The AI missed it. A transit depth over 5% is physically too large for a planet. Reclassified as an Eclipsing Binary.")
             label = "Eclipsing Binary"
             
-        # 2. Catch undeniable Exoplanets the AI missed (High BLS power + correct depth)
-        elif bls_stats['power'] > 10.0 and 0.0005 < fit_res["transit_depth"] <= 0.03:
-            if label != "Exoplanet Candidate":
+        # 2. Catch undeniable Exoplanets the AI missed 
+        # Only override if the AI thought it was noise, but we have strong BLS power and a valid planetary depth.
+        elif bls_power > 10.0 and 0.00005 < transit_depth <= 0.05:
+            if label == "Noise / False Positive":
                 st.success("✨ **Physics Override:** The AI guessed Noise, but the mathematical Box Least Squares power is undeniably strong. Upgraded to Exoplanet Candidate!")
-            label = "Exoplanet Candidate"
+                label = "Exoplanet Candidate"
 
         # 3. Catch true Noise, flares, and flatlines
-        elif bls_stats['power'] < 5.0 or fit_res["transit_depth"] < 0.0005:
+        # Changed 'or' to 'and'. ONLY override to noise if both the power is weak AND the depth is basically non-existent.
+        elif bls_power < 3.0 and transit_depth < 0.00005:
             if label != "Noise / False Positive":
                 st.warning("⚠️ **Physics Override:** Reclassified as Noise. The signal lacks a consistent, deep enough planetary transit profile.")
             label = "Noise / False Positive"
