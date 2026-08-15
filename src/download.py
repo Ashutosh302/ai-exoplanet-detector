@@ -143,9 +143,11 @@ def download_target_lightcurve(target_name: str, save_dir: str = "./data/raw", s
                 search = sector_matches
 
         # Download ONLY the first available sector to prevent timeouts
-        lc = search[0].download(quality_bitmask="default")
-        if lc is None:
+        lc = search[0].download(quality_bitmask="hard")
+        if lc_collection is None or len(lc_collection) == 0:
             return None
+
+        lc = lc_collection.stitch()
 
         # Clean NaNs and infinite values
         lc = lc.remove_nans()
